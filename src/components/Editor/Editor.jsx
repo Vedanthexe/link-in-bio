@@ -67,7 +67,7 @@ export default function Editor({ page, user, onSave }) {
     }
   };
 
-  const publicUrl = `http://localhost:5173/${user.email?.split('@')[0]}`;
+  const publicUrl = `https://link-in-bio-self.vercel.app/${user.email?.split('@')[0]}`;
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(publicUrl);
