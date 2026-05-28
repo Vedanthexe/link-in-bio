@@ -13,15 +13,29 @@ export default function PublicPage() {
 
   const fetchPublicPage = async () => {
     try {
-      const { data, error } = await supabase
+      // First get user by username
+      const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('pages(*)')
+        .select('id')
         .eq('username', username)
         .single();
 
-      if (error) throw error;
-      if (data?.pages && data.pages.length > 0) {
-        setPage(data.pages[0]);
+      if (userError) throw userError;
+      if (!userData) {
+        setLoading(false);
+        return;
+      }
+
+      // Then get the user's page
+      const { data: pageData, error: pageError } = await supabase
+        .from('pages')
+        .select('*')
+        .eq('user_id', userData.id)
+        .single();
+
+      if (pageError && pageError.code !== 'PGRST116') throw pageError; // PGRST116 = no rows returned
+      if (pageData) {
+        setPage(pageData);
       }
     } catch (err) {
       console.error('Error fetching page:', err);
