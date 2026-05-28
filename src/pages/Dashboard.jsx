@@ -3,55 +3,41 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import Editor from '../components/Editor/Editor';
 
+const DEFAULT_PAGE = {
+  id: null,
+  user_id: '',
+  title: 'My Landing Page',
+  bio: 'Welcome to my link in bio!',
+  links: [],
+  colors: { bg: '#ffffff', text: '#000000', link: '#0066cc' },
+  avatar_url: null,
+};
+
 export default function Dashboard({ user }) {
-  const [page, setPage] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(() => ({ ...DEFAULT_PAGE, user_id: user.id }));
   const navigate = useNavigate();
 
   useEffect(() => {
-    initializePage();
-  }, [user]);
-
-  const initializePage = async () => {
-    // Start with a default blank page
-    const defaultPage = {
-      id: null,
-      user_id: user.id,
-      title: 'My Landing Page',
-      bio: 'Welcome to my link in bio!',
-      links: [],
-      colors: { bg: '#ffffff', text: '#000000', link: '#0066cc' },
-      avatar_url: null,
-    };
-
-    // Try to fetch existing page
-    try {
-      const { data, error } = await supabase
-        .from('pages')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      if (!error && data) {
-        setPage(data);
-      } else {
-        // No page exists, use default
-        setPage(defaultPage);
+    // Optionally fetch existing page data
+    const fetchPage = async () => {
+      try {
+        const { data } = await supabase
+          .from('pages')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+        if (data) setPage(data);
+      } catch (err) {
+        console.error('Error fetching page:', err);
       }
-    } catch (err) {
-      console.error('Error fetching page:', err);
-      setPage(defaultPage);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+    fetchPage();
+  }, [user]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate('/login');
   };
-
-  if (loading) return <div className="flex items-center justify-center h-screen">Loading...</div>;
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -68,11 +54,7 @@ export default function Dashboard({ user }) {
       </nav>
 
       <main className="max-w-6xl mx-auto py-8">
-        {page ? (
-          <Editor page={page} user={user} onSave={fetchPage} />
-        ) : (
-          <div>Loading page...</div>
-        )}
+        <Editor page={page} user={user} onSave={() => {}} />
       </main>
     </div>
   );
