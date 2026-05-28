@@ -29,18 +29,35 @@ export default function Editor({ page, user, onSave }) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from('pages')
-        .update({
-          title,
-          bio,
-          links,
-          colors,
-          updated_at: new Date(),
-        })
-        .eq('user_id', user.id);
+      // If page has an ID, update it; otherwise insert a new one
+      if (page.id) {
+        const { error } = await supabase
+          .from('pages')
+          .update({
+            title,
+            bio,
+            links,
+            colors,
+            updated_at: new Date(),
+          })
+          .eq('id', page.id);
 
-      if (error) throw error;
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('pages')
+          .insert([
+            {
+              user_id: user.id,
+              title,
+              bio,
+              links,
+              colors,
+            },
+          ]);
+
+        if (error) throw error;
+      }
       onSave();
     } catch (err) {
       console.error('Error saving page:', err);
