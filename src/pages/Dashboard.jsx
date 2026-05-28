@@ -20,10 +20,46 @@ export default function Dashboard({ user }) {
         .eq('user_id', user.id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // If no page exists, create one
+        console.log('Fetch error code:', error.code, 'message:', error.message);
+        if (error.code === 'PGRST116' || error.message?.includes('no rows')) {
+          await createDefaultPage();
+          return;
+        }
+        throw error;
+      }
       setPage(data);
     } catch (err) {
       console.error('Error fetching page:', err);
+      alert('Error loading page: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createDefaultPage = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('pages')
+        .insert([
+          {
+            user_id: user.id,
+            title: 'My Landing Page',
+            bio: 'Welcome to my link in bio!',
+            links: [],
+            colors: { bg: '#ffffff', text: '#000000', link: '#0066cc' },
+          },
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+      setPage(data);
+    } catch (err) {
+      console.error('Error creating page:', err);
+      console.error('Error details:', { message: err.message, code: err.code, status: err.status });
+      alert('Error creating page: ' + (err.message || 'Unknown error'));
     } finally {
       setLoading(false);
     }
